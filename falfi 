@@ -1,0 +1,123 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Screen dimensions
+SCREEN_WIDTH = 400
+SCREEN_HEIGHT = 600
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+
+# Bird settings
+BIRD_WIDTH = 34
+BIRD_HEIGHT = 24
+BIRD_X = 50
+BIRD_Y = 300
+GRAVITY = 0.6
+FLAP_STRENGTH = -9
+
+# Pipe settings
+PIPE_WIDTH = 80
+PIPE_HEIGHT = 500
+PIPE_GAP = 200
+PIPE_VELOCITY = 4
+
+# Screen setup
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption('Flappy Bird')
+
+# Load images
+bird_image = pygame.transform.scale(pygame.image.load('bird.png'), (BIRD_WIDTH, BIRD_HEIGHT))
+pipe_image = pygame.transform.scale(pygame.image.load('pipe.png'), (PIPE_WIDTH, PIPE_HEIGHT))
+
+# Clock for controlling the frame rate
+clock = pygame.time.Clock()
+
+# Bird class
+class Bird:
+    def __init__(self):
+        self.x = BIRD_X
+        self.y = BIRD_Y
+        self.velocity = 0
+
+    def update(self):
+        self.velocity += GRAVITY
+        self.y += self.velocity
+
+    def flap(self):
+        self.velocity = FLAP_STRENGTH
+
+    def draw(self):
+        screen.blit(bird_image, (self.x, self.y))
+
+# Pipe class
+class Pipe:
+    def __init__(self, x):
+        self.x = x
+        self.height = random.randint(150, 450)
+        self.passed = False
+
+    def update(self):
+        self.x -= PIPE_VELOCITY
+
+    def draw(self):
+        # Top pipe
+        screen.blit(pipe_image, (self.x, self.height - PIPE_HEIGHT))
+        # Bottom pipe
+        screen.blit(pipe_image, (self.x, self.height + PIPE_GAP))
+
+def main():
+    bird = Bird()
+    pipes = [Pipe(SCREEN_WIDTH + i * 300) for i in range(3)]
+    score = 0
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    bird.flap()
+
+        bird.update()
+
+        for pipe in pipes:
+            pipe.update()
+            if pipe.x + PIPE_WIDTH < 0:
+                pipe.x = SCREEN_WIDTH + 300
+                pipe.height = random.randint(150, 450)
+                pipe.passed = False
+
+            if not pipe.passed and pipe.x < bird.x:
+                pipe.passed = True
+                score += 1
+
+        screen.fill(WHITE)
+        bird.draw()
+        for pipe in pipes:
+            pipe.draw()
+
+        # Collision detection
+        for pipe in pipes:
+            if bird.x + BIRD_WIDTH > pipe.x and bird.x < pipe.x + PIPE_WIDTH:
+                if bird.y < pipe.height or bird.y + BIRD_HEIGHT > pipe.height + PIPE_GAP:
+                    running = False
+
+        if bird.y + BIRD_HEIGHT > SCREEN_HEIGHT or bird.y < 0:
+            running = False
+
+        pygame.display.update()
+        clock.tick(30)
+
+    print(f"Game over! Your score was: {score}")
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
